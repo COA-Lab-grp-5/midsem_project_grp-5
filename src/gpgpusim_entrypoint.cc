@@ -37,6 +37,7 @@
 #include "gpgpu-sim/icnt_wrapper.h"
 #include "option_parser.h"
 #include "stream_manager.h"
+#include "counters.h"
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
@@ -69,6 +70,26 @@ void *gpgpu_sim_thread_sequential(void *ctx_ptr) {
 
 static void termination_callback() {
   printf("GPGPU-Sim: *** exit detected ***\n");
+
+  unsigned long long warp_state_counters_sum =  (warp_state_counters[WAITING]
+                                               + warp_state_counters[ISSUED]
+                                               + warp_state_counters[XALU]
+                                               + warp_state_counters[XMEM]
+                                               + warp_state_counters[OTHER]);
+
+  unsigned long long warp_state_counters_verify =  (warp_state_counters[TOTAL]);
+
+  printf("\n-----------------WARP STATE COUNTER STATISTICS:"
+         "----------------\n\n");
+  printf("                       WAITING : %10llu\n", warp_state_counters[WAITING]);
+  printf("                        ISSUED : %10llu\n", warp_state_counters[ISSUED]);
+  printf("                          XALU : %10llu\n", warp_state_counters[XALU]);
+  printf("                          XMEM : %10llu\n", warp_state_counters[XMEM]);
+  printf("                        OTHERS : %10llu\n", warp_state_counters[OTHER]);
+  printf("           SUM OF ALL COUNTERS : %10llu\n", warp_state_counters_sum);
+  printf("   PRODUCT OF CYCLES AND WARPS : %10llu\n", warp_state_counters_verify);
+  printf("\n------------------------END OF EXECUTION-------"
+         "----------------");
   fflush(stdout);
 }
 
