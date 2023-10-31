@@ -1163,6 +1163,7 @@ void scheduler_unit::cycle() {
                                                  // Pascal)
 
     if (warp(warp_id).ibuffer_empty()) {
+      //COA: increment the other warp_state_counter as the instruction buffer is empty
       warp_state_counters[OTHER]++, temp++;
       SCHED_DPRINTF(
           "Warp (warp_id %u, dynamic_warp_id %u) fails as ibuffer_empty\n",
@@ -1170,6 +1171,7 @@ void scheduler_unit::cycle() {
     }
 
     else if (warp(warp_id).waiting()) {
+      //COA: increment the other warp_state_counter as it is waiting for some other data dependency to get resolved
       warp_state_counters[OTHER]++, temp++;
       SCHED_DPRINTF(
           "Warp (warp_id %u, dynamic_warp_id %u) fails as waiting for "
@@ -1238,6 +1240,7 @@ void scheduler_unit::cycle() {
                 warp_inst_issued = true;
                 previous_issued_inst_exec_type = exec_unit_type_t::MEM;
               } else
+              //COA: increment the X_MEM warp_state_counter as the pipelines related to memory related operations are occupied
                 warp_state_counters[XMEM]++, temp++;
               // X-MEM else part
             } else {
@@ -1320,6 +1323,7 @@ void scheduler_unit::cycle() {
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::INT;
                 } else
+                //COA: increment the X_ALU warp_state_counter as the arithmetic-operation related pipelines are not available
                   warp_state_counters[XALU]++, temp++;
               } else if ((m_shader->m_config->gpgpu_num_dp_units > 0) &&
                          (pI->op == DP_OP) &&
@@ -1333,7 +1337,8 @@ void scheduler_unit::cycle() {
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::DP;
                 } else
-                  warp_state_counters[XALU]++, temp++;
+                  //COA: increment the X_ALU warp_state_counter as the arithmetic-operation related pipelines are not available
+                warp_state_counters[XALU]++, temp++;
               }  // If the DP units = 0 (like in Fermi archi), then execute DP
                  // inst on SFU unit
               else if (((m_shader->m_config->gpgpu_num_dp_units == 0 &&
@@ -1349,6 +1354,7 @@ void scheduler_unit::cycle() {
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::SFU;
                 } else
+                //COA: increment the X_ALU warp_state_counter as the arithmetic-operation related pipelines are not available
                   warp_state_counters[XALU]++, temp++;
               } else if ((pI->op == TENSOR_CORE_OP) &&
                          !(diff_exec_units && previous_issued_inst_exec_type ==
@@ -1360,7 +1366,8 @@ void scheduler_unit::cycle() {
                   issued_inst = true;
                   warp_inst_issued = true;
                   previous_issued_inst_exec_type = exec_unit_type_t::TENSOR;
-                } else
+                } else//COA: increment the X_ALU warp_state_counter as the arithmetic-operation related pipelines are not available
+                //COA: increment the X_ALU warp_state_counter as the arithmetic-operation related pipelines are not available
                   warp_state_counters[XALU]++, temp++;
               } else if ((pI->op >= SPEC_UNIT_START_ID) &&
                          !(diff_exec_units &&
@@ -1384,10 +1391,12 @@ void scheduler_unit::cycle() {
                   previous_issued_inst_exec_type =
                       exec_unit_type_t::SPECIALIZED;
                 } else
+                //COA: increment the X_ALU warp_state_counter as the arithmetic-operation related pipelines are not available
                   warp_state_counters[XALU]++, temp++;
               }
             }  // end of else
           } else {
+            //COA: increment the WAITING warp_state_counter as the warp has failed the scoreboard test
             warp_state_counters[WAITING]++, temp++;
             SCHED_DPRINTF(
                 "Warp (warp_id %u, dynamic_warp_id %u) fails scoreboard\n",
@@ -1426,7 +1435,7 @@ void scheduler_unit::cycle() {
           m_last_supervised_issued = supervised_iter;
         }
       }
-      if (issued > 0) warp_state_counters[ISSUED]++;
+      if (issued > 0) warp_state_counters[ISSUED]++;  //COA: increment the ISSUED warp_state_counter as the warp has been issued and it is ready to execute
       if (issued == 1)
         m_stats->single_issue_nums[m_id]++;
       else if (issued > 1)
@@ -1480,6 +1489,8 @@ bool scheduler_unit::sort_warps_by_oldest_dynamic_id(shd_warp_t *lhs,
     return lhs < rhs;
   }
 }
+
+//COA: warp schedulers
 
 void lrr_scheduler::order_warps() {
   order_lrr(m_next_cycle_prioritized_warps, m_supervised_warps,
